@@ -20,7 +20,7 @@ permissions:
 jobs:
   publish:
     name: Notify Packagist
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Check Packagist secrets
         env:

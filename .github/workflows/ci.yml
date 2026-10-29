@@ -16,7 +16,7 @@ concurrency:
 jobs:
   tests:
     name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }}
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
@@ -60,7 +60,9 @@ jobs:
             --with="illuminate/contracts:^${{ matrix.laravel }}.0" \
             --with="illuminate/database:^${{ matrix.laravel }}.0" \
             --with="illuminate/http:^${{ matrix.laravel }}.0" \
+            --with="illuminate/routing:^${{ matrix.laravel }}.0" \
             --with="illuminate/support:^${{ matrix.laravel }}.0" \
+            --with="illuminate/validation:^${{ matrix.laravel }}.0" \
             --with="orchestra/testbench:${{ matrix.testbench }}" \
             --prefer-dist \
             --no-interaction \

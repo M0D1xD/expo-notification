@@ -11,7 +11,7 @@ permissions:
 jobs:
   release-please:
     name: Release Please
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - name: Release Please
         uses: googleapis/release-please-action@v5
