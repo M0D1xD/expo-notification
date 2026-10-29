@@ -1,0 +1,50 @@
+{
+    "name": "m0d1xd/expo-notification",
+    "description": "Send Expo push notifications from Laravel and track delivery, opens and dismissals per device.",
+    "keywords": ["laravel", "expo", "push-notifications", "expo-notifications", "analytics"],
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "illuminate/console": "^12.0|^13.0",
+        "illuminate/contracts": "^12.0|^13.0",
+        "illuminate/database": "^12.0|^13.0",
+        "illuminate/http": "^12.0|^13.0",
+        "illuminate/support": "^12.0|^13.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.27",
+        "orchestra/testbench": "^10.0|^11.0",
+        "phpunit/phpunit": "^12.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "M0d1xd\\ExpoNotification\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "M0d1xd\\ExpoNotification\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "M0d1xd\\ExpoNotification\\ExpoNotificationServiceProvider"
+            ],
+            "aliases": {
+                "ExpoNotification": "M0d1xd\\ExpoNotification\\Facades\\ExpoNotification"
+            }
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "lint": "pint --test",
+        "format": "pint"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
