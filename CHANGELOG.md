@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/M0D1xD/expo-notification/compare/v0.1.1...v0.1.2) (2026-10-29)
+
+
+### Features
+
+* add expo-notification:install ([3f92977](https://github.com/M0D1xD/expo-notification/commit/3f929776e0966e11e3c857b54b1050010f28f521))
+
 ## [0.1.1](https://github.com/M0D1xD/expo-notification/compare/v0.1.0...v0.1.1) (2026-10-29)
 
 
