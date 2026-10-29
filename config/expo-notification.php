@@ -49,6 +49,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Device Routes
+    |--------------------------------------------------------------------------
+    |
+    | The endpoints the app calls to register, detach (logout) and deactivate
+    | a device. They have no auth middleware so guests can register; the
+    | owner is the user signed in on "guard" (null = the default guard,
+    | e.g. "sanctum" for token-authenticated apps).
+    |
+    */
+
+    'routes' => [
+        'enabled' => true,
+        'prefix' => 'expo-notification',
+        'middleware' => ['api', 'throttle:60,1'],
+        'guard' => null,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Table Names
     |--------------------------------------------------------------------------
     */

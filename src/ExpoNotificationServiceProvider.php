@@ -20,10 +20,16 @@ final class ExpoNotificationServiceProvider extends ServiceProvider
             $app->make(Dispatcher::class),
             $app['config']->get('expo-notification'),
         ));
+
+        $this->app->singleton(PushTokenRegistry::class);
     }
 
     public function boot(): void
     {
+        if ($this->app['config']->get('expo-notification.routes.enabled')) {
+            $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+        }
+
         if (! $this->app->runningInConsole()) {
             return;
         }
