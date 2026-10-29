@@ -3,8 +3,8 @@
 Send Expo push notifications from Laravel, and (in upcoming releases) track every notification per device:
 delivered, opened and dismissed.
 
-> **Status: early development.** This release ships the sending API and the database schema.
-> Token registration, receipt tracking and device events come in the next milestones.
+> **Status: early development.** This release ships the sending API, the database schema and device registration.
+> Receipt tracking and device events come in the next milestones.
 
 ## Requirements
 
@@ -91,6 +91,51 @@ $request->validate(['token' => ['required', ExpoPushToken::rule()]]);
 
 protected $casts = ['expo_token' => AsExpoPushToken::class];
 ```
+
+## Devices
+
+Each device registers its Expo push token through the package routes. `device_id` is the platform install ID
+(Android ID / iOS identifierForVendor). Every request carries the `device_id` + `push_token` pair.
+
+| Route | Body | Response |
+|---|---|---|
+| `PUT /expo-notification/push-tokens` | `device_id`, `push_token`, `platform` (`ios`/`android`), `locale?`, `previous_push_token?` | `201` created / `200` refreshed |
+| `POST /expo-notification/push-tokens/detach` | `device_id`, `push_token` | `204`, call on logout |
+| `DELETE /expo-notification/push-tokens` | `device_id`, `push_token` | `204`, the device stops receiving pushes |
+
+- One row per device, and a push token belongs to one device. A token that shows up on a new device_id moves there.
+- The owner is the user signed in on `routes.guard` (set it to `sanctum` for token-authenticated apps). Guests can register.
+- A guest refresh with the same token keeps the owner, so registering before the session loads doesn't log anyone out.
+  Only `detach` clears it.
+- When the token changes, send the old one as `previous_push_token` to keep the owner. Without it the owner is cleared,
+  so knowing a device_id alone never takes over someone else's notifications.
+- `detach` and `DELETE` answer `404` unless both values match a stored device.
+
+```php
+// config/expo-notification.php
+'routes' => [
+    'enabled' => true,
+    'prefix' => 'expo-notification',
+    'middleware' => ['api', 'throttle:60,1'],
+    'guard' => null, // the default guard, or e.g. 'sanctum'
+],
+```
+
+Add `HasPushTokens` to the owner model to send to all of a user's devices:
+
+```php
+use M0d1xd\ExpoNotification\Concerns\HasPushTokens;
+
+class User extends Authenticatable
+{
+    use HasPushTokens;
+}
+
+ExpoNotification::send(ExpoMessage::create('Hi', 'Welcome back'), $user->expoPushTokens());
+```
+
+The same rules are available without HTTP through `M0d1xd\ExpoNotification\PushTokenRegistry`
+(`register()`, `find()`, `detach()`, `deactivate()`).
 
 ### Test command
 
