@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace M0d1xd\ExpoNotification\Tests\Fixtures;
 
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use M0d1xd\ExpoNotification\Concerns\HasPushTokens;
 
-final class User extends Authenticatable
+final class User extends Authenticatable implements FilamentUser
 {
     use HasPushTokens;
 
@@ -18,5 +20,10 @@ final class User extends Authenticatable
     public static function make(string $name = 'Ali'): self
     {
         return self::query()->create(['name' => $name, 'email' => strtolower($name).'@example.test', 'password' => 'secret']);
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return true;
     }
 }

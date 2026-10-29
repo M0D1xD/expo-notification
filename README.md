@@ -68,8 +68,8 @@ $notification->deliveries; // per device: ticket, receipt, delivered_at, opened_
 
 ## Examples
 
-- [`example/`](example): a Laravel + Filament dashboard on this package (notifications, per-device deliveries and
-  events, devices, a send action, 7-day stats and a 14-day chart), with demo data.
+- [`example/`](example): a Laravel + Filament app with the package's [Filament dashboard](#filament-dashboard) and
+  demo data.
 - [expo-notification-client/example](https://github.com/M0D1xD/expo-notification-client/tree/main/example): the Expo
   app that registers with it and reports events.
 
@@ -342,6 +342,71 @@ PushNotification::query()->withDeliveryStats()->latest('sent_at')->paginate();
 
 The same definitions are available as delivery scopes: `failed()`, `delivered()`, `opened()`, `dismissed()`.
 Delivered never counts a receipt `ok`: only the device can say it got the notification.
+
+## Filament dashboard
+
+With [Filament](https://filamentphp.com) 5, add the plugin to a panel to get a **Push notifications** section:
+
+- **Notifications**: every notification with targeted, delivered, opened and failed counts and rates; per device, the
+  Expo ticket and receipt, delivered/opened times and the raw device events;
+- **Devices**: registered devices with their owner (or Guest), with send-test and deactivate actions;
+- a **Send notification** action (to all active devices, chosen users or chosen devices);
+- dashboard widgets: the last 7 days' totals and a 14-day chart.
+
+```php
+use M0d1xd\ExpoNotification\Filament\ExpoNotificationPlugin;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        // ...
+        ->plugin(ExpoNotificationPlugin::make());
+}
+```
+
+Every option is optional:
+
+```php
+ExpoNotificationPlugin::make()
+    ->navigationGroup('Notifications Center')   // default "Push notifications"; null = no group
+    ->navigationSort(10)                        // the second item follows the first
+    ->notificationsResource(label: 'Sent', icon: Heroicon::OutlinedMegaphone)
+    ->devicesResource(label: 'Phones', enabled: true)
+    ->widgets([PushStatsOverview::class])       // default both widgets; [] = none
+    ->sending(false)                            // hide every Send action
+    ->ownerModel(User::class, 'email')          // listed under "Chosen users", shown as the owner
+    ->pollingInterval('30s');                   // null = no auto-refresh
+```
+
+`ownerModel()` defaults to `owner.model` in the `foreign` owner mode. In `morph` mode, without it, the
+**Chosen users** target is hidden. The widgets (`M0d1xd\ExpoNotification\Filament\Widgets\*`) are ordinary Filament
+widgets, so you can also put them on any page yourself.
+
+The pages don't check permissions themselves. Restrict them with policies for
+`M0d1xd\ExpoNotification\Models\PushNotification` and `PushToken`, as for any Filament resource.
+
+### Renaming and translating labels
+
+Every label (group, items, columns, filters, actions, widgets) is a translation string:
+
+```bash
+php artisan vendor:publish --tag=expo-notification-translations
+```
+
+Edit `lang/vendor/expo-notification/en/filament.php`, or copy it to another locale (`ar/filament.php`). A published
+file only needs the keys you change.
+
+### Taking over the code
+
+To change more than the options allow, copy the section into your app:
+
+```bash
+php artisan expo-notification:filament-publish   # to app/Filament/ExpoNotification, namespace App\Filament\ExpoNotification
+```
+
+Then register `App\Filament\ExpoNotification\ExpoNotificationPlugin` instead of the package's. It has the same
+options. The copy is yours: package updates no longer reach it. Files that already exist are kept unless you pass
+`--force`.
 
 ## Test command
 

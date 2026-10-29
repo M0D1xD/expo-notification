@@ -10,6 +10,7 @@ use Illuminate\Http\Client\Factory;
 use Illuminate\Support\ServiceProvider;
 use M0d1xd\ExpoNotification\Console\CheckReceiptsCommand;
 use M0d1xd\ExpoNotification\Console\InstallCommand;
+use M0d1xd\ExpoNotification\Console\PublishFilamentCommand;
 use M0d1xd\ExpoNotification\Console\SendTestNotificationCommand;
 
 final class ExpoNotificationServiceProvider extends ServiceProvider
@@ -36,6 +37,8 @@ final class ExpoNotificationServiceProvider extends ServiceProvider
             $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
         }
 
+        $this->loadTranslationsFrom(__DIR__.'/../lang', 'expo-notification');
+
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule) {
             if ($cron = $this->app['config']->get('expo-notification.receipts.schedule')) {
                 $schedule->command(CheckReceiptsCommand::class)->cron($cron)->withoutOverlapping();
@@ -54,6 +57,15 @@ final class ExpoNotificationServiceProvider extends ServiceProvider
             __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'expo-notification-migrations');
 
-        $this->commands([InstallCommand::class, SendTestNotificationCommand::class, CheckReceiptsCommand::class]);
+        $this->publishes([
+            __DIR__.'/../lang' => $this->app->langPath('vendor/expo-notification'),
+        ], 'expo-notification-translations');
+
+        $this->commands([
+            InstallCommand::class,
+            PublishFilamentCommand::class,
+            SendTestNotificationCommand::class,
+            CheckReceiptsCommand::class,
+        ]);
     }
 }

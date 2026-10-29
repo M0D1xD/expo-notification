@@ -2,11 +2,11 @@
 
 namespace App\Providers\Filament;
 
+use App\Models\User;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -18,6 +18,7 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use M0d1xd\ExpoNotification\Filament\ExpoNotificationPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -36,13 +37,12 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
             ])
-            ->navigationGroups([
-                NavigationGroup::make('Push'),
-            ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,
             ])
+            // The package's "Push notifications" section: notifications, devices and the dashboard widgets.
+            ->plugin(ExpoNotificationPlugin::make()->ownerModel(User::class))
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
