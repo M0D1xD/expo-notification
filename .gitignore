@@ -3,3 +3,13 @@ composer.lock
 .phpunit.cache/
 .phpunit.result.cache
 .DS_Store
+
+# example app
+/example/vendor/
+/example/node_modules/
+/example/.env
+/example/database/*.sqlite
+/example/public/build/
+/example/public/hot
+/example/storage/*.key
+/example/.phpunit.result.cache
