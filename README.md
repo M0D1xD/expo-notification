@@ -1,10 +1,9 @@
 # m0d1xd/expo-notification
 
-Send Expo push notifications from Laravel, and (in upcoming releases) track every notification per device:
-delivered, opened and dismissed.
+Send Expo push notifications from Laravel and track every notification per device: sent, delivered and opened.
+The React Native side is [expo-notification-client](https://github.com/M0D1xD/expo-notification-client).
 
-> **Status: early development.** This release ships the sending API, the database schema, device registration and tracked sending with receipts.
-> Device events (received, opened, dismissed) come in the next milestone.
+> **Status: early development.** Android is verified on real devices; iOS is not tested yet.
 
 ## Requirements
 
@@ -177,6 +176,56 @@ stores `receipt_status` (`ok` / `error`). Receipts Expo never returns are marked
 
 > A receipt `ok` means Expo handed the message to FCM/APNs. It does not mark the delivery as delivered:
 > `delivered_at` is set when the device reports it.
+
+### Tracking payloads
+
+With `tracking.enabled` (the default), every tracked send can be recorded in the background:
+
+| Platform | What is sent | Why |
+|---|---|---|
+| Android | A data-only push: title, body, `channelId`, `categoryId` and the image move into `data.render`, priority `high` | Only data-only pushes wake the app's background task when it is in the background or killed. The client shows the notification itself |
+| iOS | The message plus `_contentAvailable: true` | Wakes the app for background processing (throttled by iOS). Not verified on devices yet |
+
+> **Android users see nothing unless the app uses expo-notification-client** (or shows `data.render` itself).
+> Without the client, set `EXPO_NOTIFICATION_TRACKING=false` to send normal pushes.
+
+The SDK owns the `data.notificationId` and `data.render` keys.
+
+## Device events
+
+The client reports what happened to each notification to `POST /expo-notification/push-events`:
+
+```json
+{
+  "device_id": "…", "push_token": "ExponentPushToken[…]",
+  "events": [{ "notification_id": "01…", "type": "received", "source": "task", "app_state": "background", "occurred_at": "2026-10-29T10:00:00Z" }]
+}
+```
+
+- Up to 100 events per request. The `device_id` + `push_token` pair must match a stored device (`404` otherwise).
+- An event is stored only for a notification that was sent to that device; others are counted as `ignored`. Each
+  notification, device and type is stored once (`duplicates`). The answer is `200 {"stored", "duplicates", "ignored"}`.
+- `occurred_at` is kept between the send time and now.
+- Each stored event updates the delivery: `received` sets `delivered_at` (the earliest wins), `opened` sets `opened_at`,
+  `dismissed` sets `dismissed_at`. Opened and dismissed also fill `delivered_at`, since the notification arrived.
+- Every stored event dispatches `M0d1xd\ExpoNotification\Events\NotificationEventRecorded`.
+
+```php
+$notification->deliveries()->whereNotNull('delivered_at')->count(); // delivered
+$notification->deliveries()->whereNotNull('opened_at')->count();    // opened
+$notification->events; // the raw device events
+```
+
+### What can be tracked (Android, verified on devices)
+
+| App state | received | opened |
+|---|---|---|
+| Foreground | yes | yes |
+| Background | yes | yes |
+| Killed by the system | yes | yes (on launch) |
+| Force-stopped by the user | no: Android does not start the app until the user opens it; the receipt is still `ok` | — |
+
+Dismissals cannot be detected on Android. iOS has not been tested yet.
 
 ### Test command
 
