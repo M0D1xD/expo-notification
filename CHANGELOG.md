@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.3](https://github.com/M0D1xD/expo-notification/compare/v0.1.2...v0.1.3) (2026-10-29)
+
+
+### Features
+
+* filament plugin with a configurable Push notifications section ([64fab59](https://github.com/M0D1xD/expo-notification/commit/64fab5905c1c618d5edbbb2d1807962ad3251090))
+* Filament plugin with a configurable Push notifications section ([a3183a6](https://github.com/M0D1xD/expo-notification/commit/a3183a62882e35157e7ff6111eaf89e8c81556ef))
+
 ## [0.1.2](https://github.com/M0D1xD/expo-notification/compare/v0.1.1...v0.1.2) (2026-10-29)
 
 
