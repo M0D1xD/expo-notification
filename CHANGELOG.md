@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.1](https://github.com/M0D1xD/expo-notification/compare/v0.1.0...v0.1.1) (2026-10-29)
+
+
+### Bug Fixes
+
+* tighten push token validation and keep the locale private on unproven registrations ([a225bff](https://github.com/M0D1xD/expo-notification/commit/a225bff2efa158ddd4f5290bc957091075c184e3))
+* tighten push token validation and keep the locale private on unproven registrations ([2d3edb9](https://github.com/M0D1xD/expo-notification/commit/2d3edb91b7900d16ea1ea1041f85b5f0e9c734c9))
+
 ## 0.1.0 (2026-10-29)
 
 
