@@ -17,7 +17,7 @@ final class ExpoPushTokenTest extends TestCase
     /** @return iterable<string, array{string, bool}> */
     public static function tokens(): iterable
     {
-        yield 'exponent prefix' => ['ExponentPushToken[1p6yUPNmaXm-MFI_S3EFSg]', true];
+        yield 'exponent prefix' => ['ExponentPushToken[aBcDeFgHiJkLmNoPqRsTuV]', true];
         yield 'expo prefix' => ['ExpoPushToken[abc123]', true];
         yield 'empty brackets' => ['ExponentPushToken[]', false];
         yield 'missing bracket' => ['ExponentPushToken[abc', false];
