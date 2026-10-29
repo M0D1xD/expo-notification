@@ -121,4 +121,43 @@ final class ExpoMessageTest extends TestCase
 
         $apply(ExpoMessage::create());
     }
+
+    public function test_as_data_only_moves_visible_fields_into_render(): void
+    {
+        $message = ExpoMessage::create('Hello', 'World')
+            ->data(['url' => '/chats/1'])
+            ->subtitle('Sub')
+            ->playSound()
+            ->badge(3)
+            ->channelId('chats')
+            ->categoryId('reply')
+            ->richContent('https://example.test/a.png')
+            ->mutableContent()
+            ->ttl(60);
+
+        $this->assertSame([
+            'data' => [
+                'url' => '/chats/1',
+                'render' => [
+                    'title' => 'Hello',
+                    'body' => 'World',
+                    'channelId' => 'chats',
+                    'categoryId' => 'reply',
+                    'image' => 'https://example.test/a.png',
+                ],
+            ],
+            'ttl' => 60,
+            'priority' => 'high',
+        ], $message->asDataOnly()->toArray());
+    }
+
+    public function test_as_data_only_leaves_the_original_unchanged(): void
+    {
+        $message = ExpoMessage::create('Hello', 'World')->channelId('chats');
+        $before = $message->toArray();
+
+        $message->asDataOnly();
+
+        $this->assertSame($before, $message->toArray());
+    }
 }

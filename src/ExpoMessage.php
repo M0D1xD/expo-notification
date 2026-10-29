@@ -59,6 +59,9 @@ final class ExpoMessage implements Arrayable, JsonSerializable
     /** @var array{image: string}|null */
     private ?array $richContent = null;
 
+    /** Set by asDataOnly(): no visible fields at all, so FCM delivers it as a data message. */
+    private bool $dataOnly = false;
+
     private function __construct(string $title, string $body)
     {
         $this->title = $title;
@@ -222,6 +225,31 @@ final class ExpoMessage implements Arrayable, JsonSerializable
         return $this;
     }
 
+    /**
+     * A copy for Android tracking: a data-only push that wakes the app's background task, which then shows the
+     * notification itself from `data.render` (title, body, channelId, categoryId, image). Priority is forced to
+     * high so the task runs while the app is in the background or killed; ttl and expiration are kept.
+     */
+    public function asDataOnly(): self
+    {
+        $copy = clone $this;
+        $copy->data = [...($this->data ?? []), 'render' => array_filter([
+            'title' => $this->title,
+            'body' => $this->body,
+            'channelId' => $this->channelId,
+            'categoryId' => $this->categoryId,
+            'image' => $this->richContent['image'] ?? null,
+        ], filled(...))];
+        $copy->title = $copy->body = $copy->subtitle = $copy->sound = null;
+        $copy->channelId = $copy->categoryId = null;
+        $copy->mutableContent = $copy->_contentAvailable = null;
+        $copy->richContent = null;
+        $copy->priority = 'high';
+        $copy->dataOnly = true;
+
+        return $copy;
+    }
+
     /** @return array<string, mixed> */
     public function toArray(): array
     {
@@ -234,7 +262,7 @@ final class ExpoMessage implements Arrayable, JsonSerializable
             'priority' => $this->priority,
             'subtitle' => $this->subtitle,
             'sound' => $this->sound,
-            'badge' => $this->badge,
+            'badge' => $this->dataOnly ? null : $this->badge,
             'channelId' => $this->channelId,
             'categoryId' => $this->categoryId,
             'mutableContent' => $this->mutableContent,

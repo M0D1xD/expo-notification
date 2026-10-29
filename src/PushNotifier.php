@@ -54,9 +54,32 @@ final class PushNotifier
             ]));
         });
 
-        $deliveries->chunk(self::CHUNK_SIZE)->each(fn (Collection $chunk) => $this->sendChunk($sent, $chunk->values()));
+        $platforms = $tokens->pluck('platform', 'id');
+
+        $deliveries
+            ->groupBy(fn (PushNotificationDelivery $delivery) => $platforms[$delivery->push_token_id])
+            ->each(fn (Collection $group, string $platform) => $group
+                ->chunk(self::CHUNK_SIZE)
+                ->each(fn (Collection $chunk) => $this->sendChunk($this->forPlatform($sent, $platform), $chunk->values())));
 
         return $notification;
+    }
+
+    /**
+     * With `tracking.enabled`, every send can be tracked in the background: Android gets a data-only push that the
+     * client SDK shows itself, iOS gets `_contentAvailable` so the app wakes up.
+     */
+    private function forPlatform(ExpoMessage $message, string $platform): ExpoMessage
+    {
+        if (! config('expo-notification.tracking.enabled', true)) {
+            return $message;
+        }
+
+        return match ($platform) {
+            'android' => $message->asDataOnly(),
+            'ios' => (clone $message)->contentAvailable(),
+            default => $message,
+        };
     }
 
     /** @param  Collection<int, PushNotificationDelivery>  $deliveries */

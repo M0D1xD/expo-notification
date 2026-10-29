@@ -18,13 +18,14 @@ use M0d1xd\ExpoNotification\Models\PushToken;
 use M0d1xd\ExpoNotification\PushTokenRegistry;
 use M0d1xd\ExpoNotification\Tests\DatabaseTestCase;
 use M0d1xd\ExpoNotification\Tests\Fixtures\User;
+use Orchestra\Testbench\Attributes\DefineEnvironment;
 
 final class PushNotifierTest extends DatabaseTestCase
 {
-    private function device(string $name, ?User $owner = null): PushToken
+    private function device(string $name, ?User $owner = null, string $platform = 'android'): PushToken
     {
         return $this->app->make(PushTokenRegistry::class)
-            ->register(['device_id' => $name, 'push_token' => "ExpoPushToken[{$name}]", 'platform' => 'android'], $owner);
+            ->register(['device_id' => $name, 'push_token' => "ExpoPushToken[{$name}]", 'platform' => $platform], $owner);
     }
 
     /**
@@ -158,5 +159,49 @@ final class PushNotifierTest extends DatabaseTestCase
         $this->expectException(InvalidArgumentException::class);
 
         PushNotifier::send(ExpoMessage::create('Hi', 'There'), 'ExpoPushToken[raw]');
+    }
+
+    public function test_tracking_sends_android_a_data_only_push_and_ios_a_content_available_one(): void
+    {
+        $this->fakeOkTickets();
+        $this->device('pixel');
+        $this->device('iphone', platform: 'ios');
+
+        $notification = PushNotifier::send(ExpoMessage::create('Hi', 'There')->channelId('chats'), PushToken::query());
+
+        $sent = [];
+        Http::assertSent(function (Request $request) use (&$sent) {
+            foreach (self::messages($request) as $message) {
+                $sent[$message['to']] = $message;
+            }
+
+            return true;
+        });
+        $android = $sent['ExpoPushToken[pixel]'];
+        $this->assertArrayNotHasKey('title', $android);
+        $this->assertSame('high', $android['priority']);
+        $this->assertSame(['title' => 'Hi', 'body' => 'There', 'channelId' => 'chats'], $android['data']['render']);
+        $this->assertSame($notification->id, $android['data']['notificationId']);
+        $ios = $sent['ExpoPushToken[iphone]'];
+        $this->assertSame(['Hi', true], [$ios['title'], $ios['_contentAvailable']]);
+        $this->assertArrayNotHasKey('render', $ios['data']);
+        $this->assertSame(2, $notification->deliveries()->where('ticket_status', 'ok')->count());
+    }
+
+    #[DefineEnvironment('disablesTracking')]
+    public function test_without_tracking_every_platform_gets_the_message_as_is(): void
+    {
+        $this->fakeOkTickets();
+        $this->device('pixel');
+
+        PushNotifier::send(ExpoMessage::create('Hi', 'There'), PushToken::query());
+
+        Http::assertSent(fn (Request $request) => self::messages($request)[0]['title'] === 'Hi'
+            && ! isset(self::messages($request)[0]['data']['render']));
+    }
+
+    protected function disablesTracking($app): void
+    {
+        $app['config']->set('expo-notification.tracking.enabled', false);
     }
 }

@@ -68,6 +68,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tracking
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, PushNotifier sends Android devices a data-only push that
+    | the client SDK (expo-notification-client) shows itself, and iOS devices
+    | a content-available push, so "received" can be recorded in the
+    | background. Apps without the client SDK must disable this, or Android
+    | users will not see the notification.
+    |
+    */
+
+    'tracking' => [
+        'enabled' => env('EXPO_NOTIFICATION_TRACKING', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Receipts
     |--------------------------------------------------------------------------
     |
