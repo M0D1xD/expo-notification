@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.4](https://github.com/M0D1xD/expo-notification/compare/v0.1.3...v0.1.4) (2026-10-29)
+
+
+### Features
+
+* localized notifications (per-device language) ([3274e2f](https://github.com/M0D1xD/expo-notification/commit/3274e2f046980138053a08a31448e5f6413ace86))
+* send localized notifications in each device's language ([347aa7b](https://github.com/M0D1xD/expo-notification/commit/347aa7b243449fd08873a2437451e9dea959ff8e))
+
 ## [0.1.3](https://github.com/M0D1xD/expo-notification/compare/v0.1.2...v0.1.3) (2026-10-29)
 
 
