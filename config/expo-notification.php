@@ -68,6 +68,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Receipts
+    |--------------------------------------------------------------------------
+    |
+    | expo-notification:check-receipts fetches receipts for tracked sends.
+    | The package schedules it on "schedule" (a cron expression, or null
+    | to schedule it yourself); it only runs if the app runs schedule:run.
+    |
+    */
+
+    'receipts' => [
+        // Minutes after sending before a receipt is fetched (Expo suggests ~15).
+        'delay' => 15,
+        // Hours after which a receipt Expo never returned is marked "expired".
+        'expire_after' => 24,
+        'schedule' => '*/15 * * * *',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Table Names
     |--------------------------------------------------------------------------
     */

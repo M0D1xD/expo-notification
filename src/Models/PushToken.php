@@ -7,6 +7,7 @@ namespace M0d1xd\ExpoNotification\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
 
@@ -48,6 +49,11 @@ class PushToken extends Model
         return $owner['mode'] === 'foreign'
             ? $this->belongsTo($owner['model'], $owner['column'])
             : $this->morphTo();
+    }
+
+    public function deliveries(): HasMany
+    {
+        return $this->hasMany(PushNotificationDelivery::class);
     }
 
     /** @param  Builder<self>  $query */

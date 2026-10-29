@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace M0d1xd\ExpoNotification;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Support\ServiceProvider;
+use M0d1xd\ExpoNotification\Console\CheckReceiptsCommand;
 use M0d1xd\ExpoNotification\Console\SendTestNotificationCommand;
 
 final class ExpoNotificationServiceProvider extends ServiceProvider
@@ -22,6 +24,8 @@ final class ExpoNotificationServiceProvider extends ServiceProvider
         ));
 
         $this->app->singleton(PushTokenRegistry::class);
+        $this->app->singleton(PushNotifier::class);
+        $this->app->singleton(ReceiptChecker::class);
     }
 
     public function boot(): void
@@ -29,6 +33,12 @@ final class ExpoNotificationServiceProvider extends ServiceProvider
         if ($this->app['config']->get('expo-notification.routes.enabled')) {
             $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
         }
+
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule) {
+            if ($cron = $this->app['config']->get('expo-notification.receipts.schedule')) {
+                $schedule->command(CheckReceiptsCommand::class)->cron($cron)->withoutOverlapping();
+            }
+        });
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -42,6 +52,6 @@ final class ExpoNotificationServiceProvider extends ServiceProvider
             __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'expo-notification-migrations');
 
-        $this->commands([SendTestNotificationCommand::class]);
+        $this->commands([SendTestNotificationCommand::class, CheckReceiptsCommand::class]);
     }
 }

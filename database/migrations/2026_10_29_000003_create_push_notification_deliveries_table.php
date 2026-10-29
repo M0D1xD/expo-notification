@@ -35,6 +35,8 @@ return new class extends Migration
 
             // Explicit name: the generated one exceeds MySQL/MariaDB's 64-character identifier limit.
             $table->unique(['push_notification_id', 'push_token_id'], 'push_deliveries_notification_token_unique');
+            // The receipt check's query: accepted, no receipt yet, sent long enough ago.
+            $table->index(['ticket_status', 'receipt_status', 'sent_at'], 'push_deliveries_receipt_pending_index');
         });
     }
 

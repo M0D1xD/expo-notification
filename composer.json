@@ -35,7 +35,8 @@
                 "M0d1xd\\ExpoNotification\\ExpoNotificationServiceProvider"
             ],
             "aliases": {
-                "ExpoNotification": "M0d1xd\\ExpoNotification\\Facades\\ExpoNotification"
+                "ExpoNotification": "M0d1xd\\ExpoNotification\\Facades\\ExpoNotification",
+                "PushNotifier": "M0d1xd\\ExpoNotification\\Facades\\PushNotifier"
             }
         }
     },
