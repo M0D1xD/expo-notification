@@ -3,14 +3,19 @@
 A Laravel 13 app with Filament 5 that uses `m0d1xd/expo-notification` from the parent folder:
 
 - the package's device routes, for the [client example app](https://github.com/M0D1xD/expo-notification-client/tree/main/example);
-- **Push → Notifications**: every notification, with targeted, delivered and opened counts and rates; per device, the
-  Expo ticket and receipt, delivered/opened times and the raw device events;
-- **Push → Devices**: registered devices with their owner (or Guest), with send-test and deactivate actions;
-- **Dashboard**: the last 7 days' totals and a 14-day chart;
-- a **Send notification** action (to all active devices, chosen users or chosen devices).
+- the package's [Filament dashboard](../README.md#filament-dashboard), registered in
+  `app/Providers/Filament/AdminPanelProvider.php`:
 
-The dashboard only reads the package's tables through its API (`withDeliveryStats()`, `DeliveryStats`); it is not
-part of the package.
+  ```php
+  ->plugin(ExpoNotificationPlugin::make()->ownerModel(User::class))
+  ```
+
+  - **Push notifications → Notifications**: every notification, with targeted, delivered and opened counts and rates;
+    per device, the Expo ticket and receipt, delivered/opened times and the raw device events;
+  - **Push notifications → Devices**: registered devices with their owner (or Guest), with send-test and deactivate
+    actions;
+  - **Dashboard**: the last 7 days' totals and a 14-day chart;
+  - a **Send notification** action (to all active devices, chosen users or chosen devices).
 
 ## Run it
 
@@ -33,8 +38,8 @@ Open http://localhost:8000/admin.
 1. Build the [client example](https://github.com/M0D1xD/expo-notification-client/tree/main/example) with
    `EXPO_PUBLIC_API_URL=http://<this machine's LAN IP>:8000`. The phone registers on launch and shows up under
    **Devices**.
-2. **Notifications → Send notification**. The notification page refreshes every 10 seconds: ticket `ok`, then
-   delivered when the phone reports it, then opened when you tap it.
+2. **Push notifications → Notifications → Send notification**. The notification page refreshes every 10 seconds:
+   ticket `ok`, then delivered when the phone reports it, then opened when you tap it.
 3. Receipts are fetched 15 minutes after sending by the scheduler (`php artisan schedule:work`), or right away with
    `php artisan expo-notification:check-receipts --min-age=0`.
 
@@ -47,4 +52,4 @@ Devices sign in as a guest: the example app has no login. Assign an owner in tin
 php artisan test
 ```
 
-The tests fake Expo (`Http::fake`) and build data through the package, as the phones do.
+The tests fake Expo (`Http::fake`) and check that every page renders; the package tests cover how the pages behave.

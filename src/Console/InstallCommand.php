@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace M0d1xd\ExpoNotification\Console;
 
+use Filament\Panel;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 
@@ -43,6 +44,9 @@ final class InstallCommand extends Command
             'Add <comment>HasPushTokens</comment> to the model that owns devices (e.g. App\\Models\\User).',
             'Run the scheduler so receipts are checked: <comment>php artisan schedule:work</comment> or a cron entry.',
             'Set up the app with <comment>expo-notifications-client</comment>.',
+            ...(class_exists(Panel::class) ? [
+                'Add the Filament section to a panel: <comment>->plugin(\\M0d1xd\\ExpoNotification\\Filament\\ExpoNotificationPlugin::make())</comment>.',
+            ] : []),
         ]);
 
         return self::SUCCESS;
