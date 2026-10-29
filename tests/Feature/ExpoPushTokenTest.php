@@ -23,6 +23,11 @@ final class ExpoPushTokenTest extends TestCase
         yield 'missing bracket' => ['ExponentPushToken[abc', false];
         yield 'raw fcm token' => ['fGx2:APA91bH-raw-device-token', false];
         yield 'empty string' => ['', false];
+        yield 'trailing newline' => ["ExponentPushToken[abc]\n", false];
+        yield 'whitespace inside' => ['ExponentPushToken[a b]', false];
+        yield 'control character' => ["ExponentPushToken[a\x00b]", false];
+        yield 'longest accepted' => ['ExponentPushToken['.str_repeat('a', 200).']', true];
+        yield 'too long' => ['ExponentPushToken['.str_repeat('a', 201).']', false];
     }
 
     #[DataProvider('tokens')]

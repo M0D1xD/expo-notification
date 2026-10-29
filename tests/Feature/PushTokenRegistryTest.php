@@ -107,6 +107,16 @@ final class PushTokenRegistryTest extends DatabaseTestCase
         $this->assertNull($token->owner_type);
     }
 
+    public function test_an_unproven_rotation_does_not_keep_the_previous_locale(): void
+    {
+        $this->register(['locale' => 'ar']);
+
+        // Someone who only knows the device_id must not read back what the device stored.
+        $token = $this->register(['push_token' => 'ExponentPushToken[other]', 'locale' => null]);
+
+        $this->assertNull($token->locale);
+    }
+
     public function test_a_token_seen_on_another_device_moves_to_it(): void
     {
         $this->register(['device_id' => 'old-device']);

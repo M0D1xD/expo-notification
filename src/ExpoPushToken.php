@@ -12,7 +12,8 @@ use Stringable;
 /** An Expo push token such as `ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]`. */
 final readonly class ExpoPushToken implements JsonSerializable, Stringable
 {
-    private const string PATTERN = '/^Expo(nent)?PushToken\[[^\[\]]+\]$/';
+    /** At most 200 characters inside the brackets, with no whitespace or control characters; `\z` rejects a trailing newline. */
+    private const string PATTERN = '/^Expo(nent)?PushToken\[[^\[\]\s\x00-\x1F\x7F]{1,200}\]\z/';
 
     private function __construct(private string $value) {}
 
