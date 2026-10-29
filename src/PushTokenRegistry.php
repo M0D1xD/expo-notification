@@ -93,7 +93,8 @@ final class PushTokenRegistry
         $token->fill([
             'push_token' => $data['push_token'],
             'platform' => $data['platform'],
-            'locale' => $data['locale'] ?? $token->locale,
+            // Only a proven refresh keeps the stored locale: the response must not reveal it to a stranger.
+            'locale' => $data['locale'] ?? ($proven ? $token->locale : null),
             'active' => true,
             'deactivated_at' => null,
             'last_registered_at' => now(),
