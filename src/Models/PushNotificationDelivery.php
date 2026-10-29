@@ -28,6 +28,9 @@ use Illuminate\Support\Carbon;
  * @property array<string, mixed>|null $details
  * @property Carbon|null $sent_at
  * @property Carbon|null $receipt_checked_at
+ * @property Carbon|null $delivered_at
+ * @property Carbon|null $opened_at
+ * @property Carbon|null $dismissed_at
  */
 class PushNotificationDelivery extends Model
 {
@@ -68,6 +71,38 @@ class PushNotificationDelivery extends Model
     public function scopePendingReceipt(Builder $query, DateTimeInterface $sentBefore): void
     {
         $query->where('ticket_status', 'ok')->whereNull('receipt_status')->where('sent_at', '<=', $sentBefore);
+    }
+
+    /**
+     * Rejected by Expo (ticket `error`), never reached Expo (ticket `failed`) or rejected by FCM/APNs (receipt `error`).
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeFailed(Builder $query): void
+    {
+        $query->where(fn (Builder $q) => $q->whereIn('ticket_status', ['error', 'failed'])->orWhere('receipt_status', 'error'));
+    }
+
+    /**
+     * The device reported it (received, opened or dismissed). A receipt `ok` alone does not count.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeDelivered(Builder $query): void
+    {
+        $query->whereNotNull('delivered_at');
+    }
+
+    /** @param  Builder<self>  $query */
+    public function scopeOpened(Builder $query): void
+    {
+        $query->whereNotNull('opened_at');
+    }
+
+    /** @param  Builder<self>  $query */
+    public function scopeDismissed(Builder $query): void
+    {
+        $query->whereNotNull('dismissed_at');
     }
 
     public function isFailed(): bool

@@ -227,7 +227,38 @@ $notification->events; // the raw device events
 
 Dismissals cannot be detected on Android. iOS has not been tested yet.
 
-### Test command
+## Analytics
+
+`DeliveryStats` counts any set of deliveries: one notification, one device, a date range.
+
+```php
+use M0d1xd\ExpoNotification\DeliveryStats;
+use M0d1xd\ExpoNotification\Models\PushNotification;
+use M0d1xd\ExpoNotification\Models\PushNotificationDelivery;
+
+$stats = $notification->stats();
+$stats = DeliveryStats::for(PushNotificationDelivery::query()->where('sent_at', '>=', now()->subDays(7)));
+$stats = DeliveryStats::for($device->deliveries()->getQuery());
+
+$stats->targeted;       // deliveries created
+$stats->accepted;       // ticket ok
+$stats->failed;         // ticket error/failed or receipt error
+$stats->delivered;      // reported by the device
+$stats->opened;
+$stats->dismissed;
+$stats->deliveryRate(); // delivered / targeted, 0–1, null when nothing was targeted
+$stats->openRate();     // opened / delivered, 0–1, null when nothing was delivered
+
+// A list of notifications with their counts in one query:
+PushNotification::query()->withDeliveryStats()->latest('sent_at')->paginate();
+// adds deliveries_count, accepted_count, failed_count, delivered_count, opened_count, dismissed_count;
+// $notification->stats() then reads them without querying again.
+```
+
+The same definitions are available as delivery scopes: `failed()`, `delivered()`, `opened()`, `dismissed()`.
+Delivered never counts a receipt `ok`: only the device can say it got the notification.
+
+## Test command
 
 ```bash
 php artisan expo-notification:send "ExponentPushToken[xxx]" --title="Hello" --body="World"
