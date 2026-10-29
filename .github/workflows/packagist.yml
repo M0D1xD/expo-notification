@@ -1,0 +1,73 @@
+name: Packagist
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Packagist API action
+        required: true
+        type: choice
+        default: update
+        options:
+          - update
+          - create
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Notify Packagist
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Packagist secrets
+        env:
+          PACKAGIST_USERNAME: ${{ secrets.PACKAGIST_USERNAME }}
+          PACKAGIST_TOKEN: ${{ secrets.PACKAGIST_TOKEN }}
+        run: |
+          if [ -z "$PACKAGIST_USERNAME" ] || [ -z "$PACKAGIST_TOKEN" ]; then
+            echo "::error::Missing secrets. Add PACKAGIST_USERNAME and PACKAGIST_TOKEN under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+      - name: Create or update package on Packagist
+        env:
+          PACKAGIST_USERNAME: ${{ secrets.PACKAGIST_USERNAME }}
+          PACKAGIST_TOKEN: ${{ secrets.PACKAGIST_TOKEN }}
+          MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'update' }}
+          REPOSITORY_URL: https://github.com/${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          if [ "$MODE" = "create" ]; then
+            ENDPOINT="https://packagist.org/api/create-package"
+            echo "Creating package on Packagist for ${REPOSITORY_URL}"
+            echo "::notice::create-package requires your Packagist MAIN API token."
+          else
+            ENDPOINT="https://packagist.org/api/update-package"
+            echo "Requesting Packagist update for ${REPOSITORY_URL}"
+            echo "::notice::update-package works with the SAFE API token (recommended for CI)."
+          fi
+
+          RESPONSE="$(curl --fail-with-body -sS -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${PACKAGIST_USERNAME}:${PACKAGIST_TOKEN}" \
+            -H "User-Agent: M0D1xD-expo-notification-github-actions (mailto:noreply@users.noreply.github.com)" \
+            -d "{\"repository\":\"${REPOSITORY_URL}\"}" \
+            "${ENDPOINT}")"
+
+          echo "Packagist response: ${RESPONSE}"
+          printf '%s' "$RESPONSE" | python3 -c 'import json,sys; data=json.load(sys.stdin); assert data.get("status")=="success", data; print("Packagist status=success")'
+
+      - name: Verify package on Packagist
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          sleep 8
+          curl --fail-with-body -sS \
+            -H "User-Agent: M0D1xD-expo-notification-github-actions (mailto:noreply@users.noreply.github.com)" \
+            "https://packagist.org/packages/m0d1xd/expo-notification.json" \
+            | python3 -c 'import json,sys; data=json.load(sys.stdin); assert data["package"]["name"]=="m0d1xd/expo-notification"; print("Listed:", data["package"]["name"]); versions=sorted(data["package"].get("versions", {})); print("Versions:", ", ".join(versions[:12]) if versions else "(none yet)")'
+          echo "Package page: https://packagist.org/packages/m0d1xd/expo-notification"
