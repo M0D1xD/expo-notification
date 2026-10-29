@@ -1,9 +1,78 @@
 # m0d1xd/expo-notification
 
+[![Packagist](https://img.shields.io/packagist/v/m0d1xd/expo-notification)](https://packagist.org/packages/m0d1xd/expo-notification)
+[![CI](https://github.com/M0D1xD/expo-notification/actions/workflows/ci.yml/badge.svg)](https://github.com/M0D1xD/expo-notification/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 Send Expo push notifications from Laravel and track every notification per device: sent, delivered and opened.
 The React Native side is [expo-notification-client](https://github.com/M0D1xD/expo-notification-client).
 
-> **Status: early development.** Android is verified on real devices; iOS is not tested yet.
+> **Status: 0.x.** Android is verified on real devices; iOS is not tested yet. Laravel 12 and 13 are supported; CI
+> runs on Laravel 13.
+
+## Quickstart
+
+**Laravel**
+
+```bash
+composer require m0d1xd/expo-notification
+php artisan vendor:publish --tag=expo-notification-migrations
+php artisan migrate
+```
+
+```php
+use M0d1xd\ExpoNotification\Concerns\HasPushTokens;
+
+class User extends Authenticatable
+{
+    use HasPushTokens;
+}
+```
+
+The device routes are registered under `/expo-notification` (see [Devices](#devices)). Run the
+[scheduler](https://laravel.com/docs/scheduling#running-the-scheduler) so receipts are checked.
+
+**Expo app** ([client setup](https://github.com/M0D1xD/expo-notification-client#installation))
+
+```bash
+npx expo install expo-notification-client expo-notifications expo-task-manager expo-application expo-device \
+  expo-constants @react-native-async-storage/async-storage
+```
+
+```ts
+// src/push.ts, imported first by index.ts
+import { configure, defineBackgroundTask } from 'expo-notification-client';
+
+configure({ apiUrl: 'https://api.example.com' });
+defineBackgroundTask();
+```
+
+```ts
+// in the root component
+useEffect(() => {
+  register();
+  return startTracking({ onOpen: (data) => data.url && router.push(String(data.url)) });
+}, []);
+```
+
+**Send and read the results**
+
+```php
+use M0d1xd\ExpoNotification\ExpoMessage;
+use M0d1xd\ExpoNotification\Facades\PushNotifier;
+
+$notification = PushNotifier::send(ExpoMessage::create('Hello', 'From Laravel')->data(['url' => '/details']), $user);
+
+$notification->stats(); // targeted, accepted, failed, delivered, opened, ... and rates
+$notification->deliveries; // per device: ticket, receipt, delivered_at, opened_at
+```
+
+## Examples
+
+- [`example/`](example): a Laravel + Filament dashboard on this package (notifications, per-device deliveries and
+  events, devices, a send action, 7-day stats and a 14-day chart), with demo data.
+- [expo-notification-client/example](https://github.com/M0D1xD/expo-notification-client/tree/main/example): the Expo
+  app that registers with it and reports events.
 
 ## Requirements
 
