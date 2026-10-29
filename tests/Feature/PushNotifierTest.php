@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace M0d1xd\ExpoNotification\Tests\Feature;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
@@ -12,20 +13,36 @@ use InvalidArgumentException;
 use M0d1xd\ExpoNotification\Events\DeliveryFailed;
 use M0d1xd\ExpoNotification\ExpoMessage;
 use M0d1xd\ExpoNotification\Facades\PushNotifier;
+use M0d1xd\ExpoNotification\LocalizedMessage;
 use M0d1xd\ExpoNotification\Models\PushNotification;
 use M0d1xd\ExpoNotification\Models\PushNotificationDelivery;
 use M0d1xd\ExpoNotification\Models\PushToken;
 use M0d1xd\ExpoNotification\PushTokenRegistry;
 use M0d1xd\ExpoNotification\Tests\DatabaseTestCase;
+use M0d1xd\ExpoNotification\Tests\Fixtures\LocalizedUser;
 use M0d1xd\ExpoNotification\Tests\Fixtures\User;
 use Orchestra\Testbench\Attributes\DefineEnvironment;
 
 final class PushNotifierTest extends DatabaseTestCase
 {
-    private function device(string $name, ?User $owner = null, string $platform = 'android'): PushToken
+    private function device(string $name, ?Model $owner = null, string $platform = 'android', ?string $locale = null): PushToken
     {
         return $this->app->make(PushTokenRegistry::class)
-            ->register(['device_id' => $name, 'push_token' => "ExpoPushToken[{$name}]", 'platform' => $platform], $owner);
+            ->register(['device_id' => $name, 'push_token' => "ExpoPushToken[{$name}]", 'platform' => $platform, 'locale' => $locale], $owner);
+    }
+
+    /**
+     * The title each device was sent, keyed by token name.
+     *
+     * @return array<string, string|null>
+     */
+    private static function sentTitles(): array
+    {
+        return Http::recorded()
+            ->flatMap(fn (array $pair) => self::messages($pair[0]))
+            ->mapWithKeys(fn (array $message) => [trim(strstr($message['to'], '['), '[]') => $message['title'] ?? $message['data']['render']['title'] ?? null])
+            ->sortKeys()
+            ->all();
     }
 
     /**
@@ -203,5 +220,93 @@ final class PushNotifierTest extends DatabaseTestCase
     protected function disablesTracking($app): void
     {
         $app['config']->set('expo-notification.tracking.enabled', false);
+    }
+
+    private static function greeting(): LocalizedMessage
+    {
+        return LocalizedMessage::make([
+            'en' => ExpoMessage::create('Hi', 'Welcome')->data(['url' => '/home']),
+            'ar' => ExpoMessage::create('مرحبا', 'أهلا بك')->data(['url' => '/home']),
+        ])->fallback('en');
+    }
+
+    public function test_a_localized_message_reaches_each_device_in_its_language(): void
+    {
+        $this->fakeOkTickets();
+        $this->device('riyadh', locale: 'ar-SA');
+        $this->device('cairo', platform: 'ios', locale: 'ar_EG');
+        $this->device('london', locale: 'en-GB');
+        $this->device('paris', locale: 'fr-FR');
+        $this->device('unknown');
+
+        $notification = PushNotifier::send(self::greeting(), PushToken::query());
+
+        $this->assertSame(
+            ['cairo' => 'مرحبا', 'london' => 'Hi', 'paris' => 'Hi', 'riyadh' => 'مرحبا', 'unknown' => 'Hi'],
+            self::sentTitles(),
+        );
+        $this->assertSame(
+            ['cairo' => 'ar', 'london' => 'en', 'paris' => 'en', 'riyadh' => 'ar', 'unknown' => 'en'],
+            $notification->deliveries()->with('pushToken')->get()->mapWithKeys(fn ($d) => [$d->pushToken->device_id => $d->locale])->sortKeys()->all(),
+        );
+        Http::assertSentCount(3); // en android, ar android, ar ios
+    }
+
+    public function test_it_records_the_fallback_text_and_every_language_sent(): void
+    {
+        $this->fakeOkTickets();
+        $this->device('riyadh', locale: 'ar');
+        $this->device('london', locale: 'en');
+
+        $notification = PushNotifier::send(self::greeting(), PushToken::query())->fresh();
+
+        $this->assertSame('Hi', $notification->title);
+        $this->assertSame(['url' => '/home', 'notificationId' => $notification->id], $notification->data);
+        $this->assertEqualsCanonicalizing(
+            ['en' => ['title' => 'Hi', 'body' => 'Welcome'], 'ar' => ['title' => 'مرحبا', 'body' => 'أهلا بك']],
+            $notification->translations,
+        );
+        Http::assertSent(fn (Request $request) => collect(self::messages($request))
+            ->every(fn (array $message) => $message['data']['notificationId'] === $notification->id));
+    }
+
+    public function test_the_owners_saved_language_wins_over_the_devices(): void
+    {
+        $this->fakeOkTickets();
+        $this->device('phone', LocalizedUser::make('ar', 'Sara'), locale: 'en-US');
+        $this->device('tablet', LocalizedUser::make(null, 'Omar'), locale: 'ar');
+        $this->device('laptop', LocalizedUser::make('de', 'Hans'), locale: 'ar');
+
+        PushNotifier::send(self::greeting(), PushToken::query());
+
+        $this->assertSame(['laptop' => 'مرحبا', 'phone' => 'مرحبا', 'tablet' => 'مرحبا'], self::sentTitles());
+    }
+
+    public function test_a_factory_builds_only_the_languages_that_are_needed(): void
+    {
+        $this->fakeOkTickets();
+        config(['expo-notification.locales.supported' => ['en', 'ar', 'fr']]);
+        $this->device('riyadh', locale: 'ar');
+        $built = [];
+
+        PushNotifier::send(LocalizedMessage::using(function (string $locale) use (&$built) {
+            $built[] = $locale;
+
+            return ExpoMessage::create("title:{$locale}");
+        })->fallback('en'), PushToken::query());
+
+        $this->assertSame(['riyadh' => 'title:ar'], self::sentTitles());
+        $this->assertEqualsCanonicalizing(['en', 'ar'], $built);
+    }
+
+    public function test_a_plain_message_records_no_languages(): void
+    {
+        $this->fakeOkTickets();
+        $this->device('riyadh', locale: 'ar');
+
+        $notification = PushNotifier::send(ExpoMessage::create('Hi'), PushToken::query())->fresh();
+
+        $this->assertNull($notification->translations);
+        $this->assertNull($notification->deliveries()->sole()->locale);
     }
 }

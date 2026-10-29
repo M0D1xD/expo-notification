@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property string $push_notification_id
  * @property int|null $push_token_id
  * @property string $push_token
+ * @property string|null $locale the language sent, for localized sends
  * @property string|null $ticket_id
  * @property string|null $ticket_status
  * @property string|null $receipt_status

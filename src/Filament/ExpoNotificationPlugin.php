@@ -45,6 +45,9 @@ class ExpoNotificationPlugin implements Plugin
 
     private ?string $pollingInterval = '10s';
 
+    /** @var array<string, string> */
+    private array $locales = [];
+
     public static function make(): static
     {
         return app(static::class);
@@ -143,6 +146,19 @@ class ExpoNotificationPlugin implements Plugin
         return $this;
     }
 
+    /**
+     * Languages offered when sending, e.g. ['en' => 'English', 'ar' => 'العربية']: a tab each for the title and body,
+     * and each device gets its language. The first is required and is the fallback; [] sends one text to everyone.
+     *
+     * @param  array<string, string>  $locales
+     */
+    public function locales(array $locales): static
+    {
+        $this->locales = $locales;
+
+        return $this;
+    }
+
     public function getNavigationGroup(): string|UnitEnum|null
     {
         return $this->navigationGroup === false ? __('expo-notification::filament.navigation.group') : $this->navigationGroup;
@@ -206,6 +222,12 @@ class ExpoNotificationPlugin implements Plugin
     public function getOwnerTitleAttribute(): string
     {
         return $this->ownerTitleAttribute;
+    }
+
+    /** @return array<string, string> */
+    public function getLocales(): array
+    {
+        return $this->locales;
     }
 
     public function getPollingInterval(): ?string

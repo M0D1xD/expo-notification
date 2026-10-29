@@ -39,6 +39,12 @@ class DeliveryTable
                         ->label(__('expo-notification::filament.deliveries.notification'))
                         ->limit(40),
                 ]),
+                TextColumn::make('locale')
+                    ->label(__('expo-notification::filament.deliveries.locale'))
+                    ->badge()
+                    ->color('gray')
+                    ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: ExpoNotificationPlugin::get()->getLocales() === []),
                 TextColumn::make('ticket_status')
                     ->label(__('expo-notification::filament.deliveries.ticket'))
                     ->badge()

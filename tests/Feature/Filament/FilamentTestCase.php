@@ -114,10 +114,10 @@ abstract class FilamentTestCase extends DatabaseTestCase
         }]);
     }
 
-    protected function device(string $name, ?User $owner = null, string $platform = 'android'): PushToken
+    protected function device(string $name, ?User $owner = null, string $platform = 'android', ?string $locale = null): PushToken
     {
         return app(PushTokenRegistry::class)->register(
-            ['device_id' => $name, 'push_token' => "ExponentPushToken[{$name}]", 'platform' => $platform],
+            ['device_id' => $name, 'push_token' => "ExponentPushToken[{$name}]", 'platform' => $platform, 'locale' => $locale],
             $owner,
         );
     }

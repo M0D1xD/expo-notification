@@ -20,6 +20,7 @@ use M0d1xd\ExpoNotification\PushNotifier;
  * @property string|null $body
  * @property array<string, mixed>|null $data
  * @property array<string, mixed> $payload
+ * @property array<string, array{title?: string, subtitle?: string, body?: string}>|null $translations per language, for localized sends
  * @property Carbon|null $sent_at
  * @property int|null $deliveries_count with withDeliveryStats(), like the *_count attributes below
  * @property int|null $accepted_count
@@ -44,6 +45,7 @@ class PushNotification extends Model
         return [
             'data' => 'array',
             'payload' => 'array',
+            'translations' => 'array',
             'sent_at' => 'datetime',
         ];
     }

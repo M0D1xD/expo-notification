@@ -46,7 +46,7 @@ final class InstallCommandTest extends TestCase
             ->assertSuccessful();
 
         $this->assertFileExists($this->root.'/config/expo-notification.php');
-        $this->assertCount(4, $this->migrations());
+        $this->assertCount(5, $this->migrations());
         foreach (['.env', '.env.example'] as $file) {
             $contents = file_get_contents($this->root.'/'.$file);
             $this->assertStringContainsString("\nEXPO_ACCESS_TOKEN=\n", $contents, $file);
@@ -68,11 +68,38 @@ final class InstallCommandTest extends TestCase
             ->expectsConfirmation('Run the migrations now?', 'no')
             ->assertSuccessful();
 
-        $this->assertCount(4, $this->migrations());
+        $this->assertCount(5, $this->migrations());
         $this->assertSame($config, file_get_contents($this->root.'/config/expo-notification.php'));
         $this->assertSame($env, file_get_contents($this->root.'/.env'));
         $this->assertStringContainsString('EXPO_ACCESS_TOKEN=secret', $env);
         $this->assertSame(1, substr_count($env, 'EXPO_ACCESS_TOKEN='));
+    }
+
+    public function test_an_upgrade_publishes_only_the_new_migrations(): void
+    {
+        $this->artisan('expo-notification:install', ['--without-env' => true])->expectsConfirmation('Run the migrations now?', 'no');
+        $locale = collect(glob($this->root.'/database/migrations/*_add_locale_to_push_notifications.php'))->sole();
+        unlink($locale);
+        $before = $this->migrations();
+
+        $this->artisan('expo-notification:install', ['--without-env' => true])
+            ->expectsOutputToContain('Published 1 migration.')
+            ->expectsConfirmation('Run the migrations now?', 'no')
+            ->assertSuccessful();
+
+        $this->assertCount(5, $this->migrations());
+        $this->assertSame([], array_diff($before, $this->migrations()));
+    }
+
+    public function test_migrations_are_published_in_the_package_order(): void
+    {
+        $this->artisan('expo-notification:install', ['--without-env' => true])->expectsConfirmation('Run the migrations now?', 'no');
+
+        $this->assertSame(
+            ['create_push_tokens_table.php', 'create_push_notifications_table.php', 'create_push_notification_deliveries_table.php',
+                'create_push_notification_events_table.php', 'add_locale_to_push_notifications.php'],
+            array_map(fn (string $file) => substr($file, 18), $this->migrations()),
+        );
     }
 
     public function test_without_env_leaves_the_env_files_alone(): void
@@ -95,5 +122,6 @@ final class InstallCommandTest extends TestCase
 
         $this->assertTrue(Schema::hasTable('push_tokens'));
         $this->assertTrue(Schema::hasTable('push_notification_events'));
+        $this->assertTrue(Schema::hasColumn('push_notification_deliveries', 'locale'));
     }
 }

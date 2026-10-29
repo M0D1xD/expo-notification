@@ -85,6 +85,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Languages
+    |--------------------------------------------------------------------------
+    |
+    | Expo sends a message's text as given, so a LocalizedMessage is sent to
+    | each device in its language: the owner's preferredLocale() (Laravel's
+    | HasLocalePreference), else the locale the device registered with, else
+    | the fallback. "supported" lists the languages LocalizedMessage::using()
+    | builds; the fallback defaults to app.fallback_locale.
+    |
+    */
+
+    'locales' => [
+        'supported' => [],
+        'fallback' => env('EXPO_NOTIFICATION_FALLBACK_LOCALE'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Receipts
     |--------------------------------------------------------------------------
     |

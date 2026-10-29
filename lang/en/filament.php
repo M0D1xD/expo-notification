@@ -36,6 +36,8 @@ return [
             'data' => 'Data',
             'payload' => 'Payload as sent',
             'payload_description' => 'The message before the per-platform tracking payload (data-only on Android).',
+            'translations' => 'Languages',
+            'translations_description' => 'The title and body sent in each language; the fields above show the fallback language.',
         ],
         'deliveries' => 'Deliveries',
         'events' => 'Events',
@@ -66,6 +68,7 @@ return [
 
     'deliveries' => [
         'device' => 'Device',
+        'locale' => 'Language',
         'deleted_device' => 'Deleted device',
         'platform' => 'Platform',
         'owner' => 'Owner',
@@ -132,6 +135,7 @@ return [
             'body' => 'Body',
             'url' => 'Deep link',
             'url_helper' => 'Sent as data.url, e.g. /details',
+            'translation_helper' => 'Leave empty to send these devices the :language text.',
             'target' => 'Send to',
             'targets' => [
                 'all' => 'All active devices',
