@@ -84,6 +84,7 @@ $notification->deliveries; // per device: ticket, receipt, delivered_at, opened_
 ```bash
 composer require m0d1xd/expo-notification
 php artisan vendor:publish --tag=expo-notification-config
+# optional: edit config/expo-notification.php now: table names, owner mode (see Database schema)
 php artisan vendor:publish --tag=expo-notification-migrations
 php artisan migrate
 ```
@@ -355,7 +356,26 @@ The owner is configurable in `config/expo-notification.php`:
 ],
 ```
 
-Table names are configurable under `tables`.
+### Table names
+
+The migrations read `tables` (and `owner`) from the config when `php artisan migrate` runs, so set them before the
+first migrate:
+
+```php
+// config/expo-notification.php
+'tables' => [
+    'push_tokens' => 'app_devices',
+    'notifications' => 'app_push_messages',
+    'deliveries' => 'app_push_deliveries',
+    'events' => 'app_push_events',
+],
+```
+
+Foreign keys and the models follow the same names. If the config is cached, run `php artisan config:clear` first.
+
+Changing a name **after** migrating does not rename anything: the models would look for a table that doesn't exist,
+and a rollback would drop the wrong one. Rename the table in a migration of your own
+(`Schema::rename('push_tokens', 'app_devices')`), then change the config.
 
 ## Coming from laravel-notification-channels/expo
 

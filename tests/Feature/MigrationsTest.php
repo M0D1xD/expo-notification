@@ -7,6 +7,10 @@ namespace M0d1xd\ExpoNotification\Tests\Feature;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use M0d1xd\ExpoNotification\Models\PushNotification;
+use M0d1xd\ExpoNotification\Models\PushNotificationDelivery;
+use M0d1xd\ExpoNotification\Models\PushNotificationEvent;
+use M0d1xd\ExpoNotification\Models\PushToken;
 use M0d1xd\ExpoNotification\Tests\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 
@@ -106,15 +110,36 @@ final class MigrationsTest extends TestCase
 
     public function test_table_names_are_configurable(): void
     {
-        config(['expo-notification.tables.push_tokens' => 'devices']);
+        $names = [
+            'push_tokens' => 'app_devices',
+            'notifications' => 'app_push_messages',
+            'deliveries' => 'app_push_deliveries',
+            'events' => 'app_push_events',
+        ];
+        config(['expo-notification.tables' => $names]);
 
         $this->migrate();
 
-        $this->assertTrue(Schema::hasTable('devices'));
+        foreach ($names as $name) {
+            $this->assertTrue(Schema::hasTable($name), $name);
+        }
+        foreach (self::TABLES as $default) {
+            $this->assertFalse(Schema::hasTable($default), $default);
+        }
+        foreach (['app_push_deliveries', 'app_push_events'] as $table) {
+            $foreign = collect(Schema::getForeignKeys($table))->mapWithKeys(fn (array $fk) => [$fk['columns'][0] => $fk['foreign_table']]);
+            $this->assertSame(['push_notification_id' => 'app_push_messages', 'push_token_id' => 'app_devices'], $foreign->sortKeys()->all(), $table);
+        }
         $this->assertSame(
-            'devices',
-            collect(Schema::getForeignKeys('push_notification_deliveries'))->firstWhere('columns', ['push_token_id'])['foreign_table'],
+            array_values($names),
+            [(new PushToken)->getTable(), (new PushNotification)->getTable(), (new PushNotificationDelivery)->getTable(), (new PushNotificationEvent)->getTable()],
         );
+
+        $this->migrate('migrate:rollback');
+
+        foreach ($names as $name) {
+            $this->assertFalse(Schema::hasTable($name), $name);
+        }
     }
 
     /** @return array<string, mixed> */
