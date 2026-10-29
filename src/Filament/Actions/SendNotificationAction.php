@@ -11,6 +11,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Collection;
@@ -18,6 +20,7 @@ use M0d1xd\ExpoNotification\ExpoMessage;
 use M0d1xd\ExpoNotification\Facades\PushNotifier;
 use M0d1xd\ExpoNotification\Filament\ExpoNotificationPlugin;
 use M0d1xd\ExpoNotification\Filament\Resources\PushNotifications\PushNotificationResource;
+use M0d1xd\ExpoNotification\LocalizedMessage;
 use M0d1xd\ExpoNotification\Models\PushToken;
 
 /**
@@ -60,19 +63,47 @@ class SendNotificationAction
 
     private static function messageFields(): array
     {
+        $locales = ExpoNotificationPlugin::get()->getLocales();
+
         return [
-            TextInput::make('title')
-                ->label(__('expo-notification::filament.actions.send.title'))
-                ->required()
-                ->maxLength(255),
-            Textarea::make('body')
-                ->label(__('expo-notification::filament.actions.send.body'))
-                ->required()
-                ->rows(3),
+            ...($locales === [] ? self::textFields() : [
+                Tabs::make('languages')->tabs(array_map(
+                    fn (string $locale, string $label) => Tab::make($label)->schema(self::textFields($locale, array_key_first($locales))),
+                    array_keys($locales),
+                    $locales,
+                )),
+            ]),
             TextInput::make('url')
                 ->label(__('expo-notification::filament.actions.send.url'))
                 ->helperText(__('expo-notification::filament.actions.send.url_helper'))
                 ->maxLength(255),
+        ];
+    }
+
+    /**
+     * Title and body; per language as title.{locale} and body.{locale}, where only the fallback language is required.
+     *
+     * @return array<int, TextInput|Textarea>
+     */
+    private static function textFields(?string $locale = null, ?string $fallback = null): array
+    {
+        $required = $locale === $fallback;
+        $helper = $required ? null : __('expo-notification::filament.actions.send.translation_helper', [
+            'language' => ExpoNotificationPlugin::get()->getLocales()[$fallback] ?? $fallback,
+        ]);
+
+        return [
+            TextInput::make($locale === null ? 'title' : "title.{$locale}")
+                ->label(__('expo-notification::filament.actions.send.title'))
+                ->required($required)
+                ->when(! $required, fn (TextInput $field) => $field->requiredWith("body.{$locale}"))
+                ->helperText($helper)
+                ->maxLength(255),
+            Textarea::make($locale === null ? 'body' : "body.{$locale}")
+                ->label(__('expo-notification::filament.actions.send.body'))
+                ->required($required)
+                ->when(! $required, fn (Textarea $field) => $field->requiredWith("title.{$locale}"))
+                ->rows(3),
         ];
     }
 
@@ -125,10 +156,17 @@ class SendNotificationAction
 
     private static function send(array $data, mixed $recipients, Action $action): void
     {
-        $message = ExpoMessage::create($data['title'], $data['body'])
+        $message = fn (string $title, string $body) => ExpoMessage::create($title, $body)
             ->when(filled($data['url'] ?? null), fn (ExpoMessage $message) => $message->data(['url' => $data['url']]));
+        $locales = ExpoNotificationPlugin::get()->getLocales();
 
-        $notification = PushNotifier::send($message, $recipients);
+        $notification = PushNotifier::send($locales === []
+            ? $message($data['title'], $data['body'])
+            : LocalizedMessage::make(collect($locales)
+                ->keys()
+                ->filter(fn (string $locale) => filled($data['title'][$locale] ?? null))
+                ->mapWithKeys(fn (string $locale) => [$locale => $message($data['title'][$locale], $data['body'][$locale])])
+                ->all())->fallback(array_key_first($locales)), $recipients);
         $targeted = $notification->deliveries()->count();
 
         Notification::make()

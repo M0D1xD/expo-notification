@@ -52,19 +52,32 @@ final class InstallCommand extends Command
         return self::SUCCESS;
     }
 
-    /** Publishing again would copy the migrations under new dates, so they are published only once. */
+    /**
+     * Publishes each package migration the app does not have yet, matched by name without the date, so upgrading
+     * adds new migrations and never copies one twice.
+     */
     private function publishMigrations(Filesystem $files): void
     {
-        $published = collect($files->glob(database_path('migrations/*.php')))
-            ->contains(fn (string $path) => str_ends_with($path, '_create_push_tokens_table.php'));
+        $published = collect($files->glob(database_path('migrations/*.php')))->map(fn (string $path) => basename($path));
+        // Package migration paths in date order, keyed by their name without the date ("create_push_tokens_table.php").
+        $missing = collect($files->glob(__DIR__.'/../../database/migrations/*.php'))
+            ->keyBy(fn (string $path) => substr(basename($path), 18))
+            ->reject(fn (string $path, string $name) => $published->contains(fn (string $file) => str_ends_with($file, '_'.$name)));
 
-        if ($published) {
+        if ($missing->isEmpty()) {
             $this->components->info('The migrations are already published.');
 
             return;
         }
 
-        $this->call('vendor:publish', ['--tag' => 'expo-notification-migrations']);
+        $files->ensureDirectoryExists(database_path('migrations'));
+        $now = now();
+        $missing->values()->each(fn (string $path, int $i) => $files->copy(
+            $path,
+            database_path('migrations/'.$now->copy()->addSeconds($i)->format('Y_m_d_His').'_'.substr(basename($path), 18)),
+        ));
+
+        $this->components->info('Published '.$missing->count().' '.str('migration')->plural($missing->count()).'.');
     }
 
     /** Appends the keys a file does not have yet; existing values are never changed. */

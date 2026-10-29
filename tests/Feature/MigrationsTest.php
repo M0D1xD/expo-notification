@@ -40,8 +40,9 @@ final class MigrationsTest extends TestCase
         ]));
         $this->assertTrue(Schema::hasColumns('push_notification_deliveries', [
             'push_notification_id', 'push_token_id', 'push_token', 'ticket_id', 'receipt_status', 'error_type',
-            'delivered_at', 'opened_at', 'dismissed_at',
+            'delivered_at', 'opened_at', 'dismissed_at', 'locale',
         ]));
+        $this->assertTrue(Schema::hasColumn('push_notifications', 'translations'));
         $this->assertTrue(Schema::hasColumns('push_notification_events', [
             'push_notification_id', 'push_token_id', 'type', 'source', 'app_state', 'occurred_at',
         ]));
@@ -123,6 +124,8 @@ final class MigrationsTest extends TestCase
         foreach ($names as $name) {
             $this->assertTrue(Schema::hasTable($name), $name);
         }
+        $this->assertTrue(Schema::hasColumn('app_push_deliveries', 'locale'));
+        $this->assertTrue(Schema::hasColumn('app_push_messages', 'translations'));
         foreach (self::TABLES as $default) {
             $this->assertFalse(Schema::hasTable($default), $default);
         }

@@ -276,6 +276,61 @@ With `tracking.enabled` (the default), every tracked send can be recorded in the
 
 The SDK owns the `data.notificationId` and `data.render` keys.
 
+### Multi-language notifications
+
+Expo does not translate: it delivers a message's title and body exactly as sent. So the server picks each device's
+language and sends that device the matching text. Pass a `LocalizedMessage` instead of an `ExpoMessage`:
+
+```php
+use M0d1xd\ExpoNotification\LocalizedMessage;
+
+// Written out per language
+PushNotifier::send(LocalizedMessage::make([
+    'en' => ExpoMessage::create('New bid', 'Ali bid $500')->data(['url' => '/ads/7']),
+    'ar' => ExpoMessage::create('مزايدة جديدة', 'علي زايد بـ 500$')->data(['url' => '/ads/7']),
+])->fallback('en'), $users);
+
+// Or built per language, e.g. from translation files or your own templates; only the languages needed are built
+PushNotifier::send(LocalizedMessage::using(
+    fn (string $locale) => ExpoMessage::create(__('push.bid.title', [], $locale), __('push.bid.body', ['name' => 'Ali'], $locale)),
+), $users);
+```
+
+Each device's language is, in order:
+
+1. the owner's `preferredLocale()`, when the owner model implements Laravel's
+   `Illuminate\Contracts\Translation\HasLocalePreference` (also used by Laravel mail);
+2. the `locale` the device registered with (expo-notifications-client sends the phone's language);
+3. the fallback: `->fallback()`, else `locales.fallback`, else `app.fallback_locale`.
+
+`ar-SA` and `ar_EG` match `ar` when there is no exact match. Guests have no owner, so they get their device's language.
+
+```php
+// app/Models/User.php
+class User extends Authenticatable implements HasLocalePreference
+{
+    public function preferredLocale(): ?string
+    {
+        return $this->preferred_language; // 'en' / 'ar'
+    }
+}
+```
+
+```php
+// config/expo-notification.php
+'locales' => [
+    'supported' => ['en', 'ar'],  // the languages LocalizedMessage::using() builds
+    'fallback' => env('EXPO_NOTIFICATION_FALLBACK_LOCALE'), // null = app.fallback_locale
+],
+```
+
+It is still one notification: `title`/`body` hold the fallback language's text, `translations` holds every language
+that was sent, and each delivery records its `locale`. In the Filament dashboard, `->locales(['en' => 'English', 'ar' =>
+'العربية'])` adds a tab per language to **Send notification**.
+
+> Upgrading from 0.1.x: run `php artisan expo-notification:install` again (it publishes only the new
+> `add_locale_to_push_notifications` migration), then `php artisan migrate`.
+
 ## Device events
 
 The client reports what happened to each notification to `POST /expo-notification/push-events`:
@@ -375,6 +430,7 @@ ExpoNotificationPlugin::make()
     ->widgets([PushStatsOverview::class])       // default both widgets; [] = none
     ->sending(false)                            // hide every Send action
     ->ownerModel(User::class, 'email')          // listed under "Chosen users", shown as the owner
+    ->locales(['en' => 'English', 'ar' => 'العربية']) // a title/body tab per language; the first is the fallback
     ->pollingInterval('30s');                   // null = no auto-refresh
 ```
 
@@ -421,8 +477,8 @@ php artisan expo-notification:send "ExponentPushToken[xxx]" --track
 | Table | Purpose |
 |---|---|
 | `push_tokens` | One row per device: `device_id`, `push_token`, `platform`, `locale`, nullable owner |
-| `push_notifications` | Each notification sent (ULID id, also sent to devices as `data.notificationId`) |
-| `push_notification_deliveries` | Per notification per device: Expo ticket/receipt, `delivered_at`, `opened_at`, `dismissed_at` |
+| `push_notifications` | Each notification sent (ULID id, also sent to devices as `data.notificationId`); `translations` for multi-language sends |
+| `push_notification_deliveries` | Per notification per device: `locale`, Expo ticket/receipt, `delivered_at`, `opened_at`, `dismissed_at` |
 | `push_notification_events` | Raw device events (received / opened / dismissed), stored once each |
 
 The owner is configurable in `config/expo-notification.php`:

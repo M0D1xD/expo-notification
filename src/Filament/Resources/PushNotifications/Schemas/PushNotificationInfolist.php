@@ -25,6 +25,13 @@ class PushNotificationInfolist
                         TextEntry::make('id')->label(__('expo-notification::filament.notifications.infolist.id'))->copyable(),
                         self::json('data')->label(__('expo-notification::filament.notifications.infolist.data'))->placeholder('—'),
                     ]),
+                Section::make(__('expo-notification::filament.notifications.infolist.translations'))
+                    ->description(__('expo-notification::filament.notifications.infolist.translations_description'))
+                    ->visible(fn (PushNotification $record): bool => filled($record->translations))
+                    ->collapsed()
+                    ->schema([
+                        self::json('translations')->hiddenLabel(),
+                    ]),
                 Section::make(__('expo-notification::filament.notifications.infolist.payload'))
                     ->description(__('expo-notification::filament.notifications.infolist.payload_description'))
                     ->collapsed()
