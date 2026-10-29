@@ -51,6 +51,11 @@ class PushToken extends Model
             : $this->morphTo();
     }
 
+    public function events(): HasMany
+    {
+        return $this->hasMany(PushNotificationEvent::class);
+    }
+
     public function deliveries(): HasMany
     {
         return $this->hasMany(PushNotificationDelivery::class);

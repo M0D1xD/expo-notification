@@ -40,6 +40,11 @@ class PushNotification extends Model
         ];
     }
 
+    public function events(): HasMany
+    {
+        return $this->hasMany(PushNotificationEvent::class, 'push_notification_id');
+    }
+
     public function deliveries(): HasMany
     {
         return $this->hasMany(PushNotificationDelivery::class, 'push_notification_id');

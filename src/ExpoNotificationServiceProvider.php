@@ -26,6 +26,7 @@ final class ExpoNotificationServiceProvider extends ServiceProvider
         $this->app->singleton(PushTokenRegistry::class);
         $this->app->singleton(PushNotifier::class);
         $this->app->singleton(ReceiptChecker::class);
+        $this->app->singleton(EventRecorder::class);
     }
 
     public function boot(): void
