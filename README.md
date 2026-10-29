@@ -16,8 +16,7 @@ The React Native side is [expo-notification-client](https://github.com/M0D1xD/ex
 
 ```bash
 composer require m0d1xd/expo-notification
-php artisan vendor:publish --tag=expo-notification-migrations
-php artisan migrate
+php artisan expo-notification:install
 ```
 
 ```php
@@ -83,8 +82,24 @@ $notification->deliveries; // per device: ticket, receipt, delivered_at, opened_
 
 ```bash
 composer require m0d1xd/expo-notification
+php artisan expo-notification:install
+```
+
+The install command:
+
+- publishes `config/expo-notification.php` (an existing one is kept; `--force` overwrites it);
+- publishes the migrations once (running it again doesn't copy them under new dates);
+- adds `EXPO_ACCESS_TOKEN` and `EXPO_NOTIFICATION_TRACKING` to `.env` and `.env.example` when they're missing, and never
+  changes existing values (`--without-env` skips this);
+- asks to run the migrations.
+
+For custom table names or the `foreign` owner mode, answer **no** to the migrate question, edit
+`config/expo-notification.php` (see [Table names](#table-names)), then run `php artisan migrate`.
+
+Or step by step:
+
+```bash
 php artisan vendor:publish --tag=expo-notification-config
-# optional: edit config/expo-notification.php now: table names, owner mode (see Database schema)
 php artisan vendor:publish --tag=expo-notification-migrations
 php artisan migrate
 ```

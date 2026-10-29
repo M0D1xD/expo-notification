@@ -9,6 +9,7 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Support\ServiceProvider;
 use M0d1xd\ExpoNotification\Console\CheckReceiptsCommand;
+use M0d1xd\ExpoNotification\Console\InstallCommand;
 use M0d1xd\ExpoNotification\Console\SendTestNotificationCommand;
 
 final class ExpoNotificationServiceProvider extends ServiceProvider
@@ -53,6 +54,6 @@ final class ExpoNotificationServiceProvider extends ServiceProvider
             __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'expo-notification-migrations');
 
-        $this->commands([SendTestNotificationCommand::class, CheckReceiptsCommand::class]);
+        $this->commands([InstallCommand::class, SendTestNotificationCommand::class, CheckReceiptsCommand::class]);
     }
 }
