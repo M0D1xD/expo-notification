@@ -3,8 +3,8 @@
 Send Expo push notifications from Laravel, and (in upcoming releases) track every notification per device:
 delivered, opened and dismissed.
 
-> **Status: early development.** This release ships the sending API, the database schema and device registration.
-> Receipt tracking and device events come in the next milestones.
+> **Status: early development.** This release ships the sending API, the database schema, device registration and tracked sending with receipts.
+> Device events (received, opened, dismissed) come in the next milestone.
 
 ## Requirements
 
@@ -137,10 +137,53 @@ ExpoNotification::send(ExpoMessage::create('Hi', 'Welcome back'), $user->expoPus
 The same rules are available without HTTP through `M0d1xd\ExpoNotification\PushTokenRegistry`
 (`register()`, `find()`, `detach()`, `deactivate()`).
 
+## Tracked sending
+
+`PushNotifier` sends to registered devices and records the result per device:
+
+```php
+use M0d1xd\ExpoNotification\Facades\PushNotifier;
+
+$notification = PushNotifier::send(
+    ExpoMessage::create('New message', 'Ali sent you a photo')->data(['url' => '/chats/12']),
+    $user, // or a PushToken, a PushToken query, $user->pushTokens(), or an array mixing them
+);
+
+$notification->deliveries; // one row per device: ticket_id, ticket_status, receipt_status, error_type, ...
+```
+
+- Only active tokens are targeted, once per device.
+- The sent copy carries `data.notificationId` (the notification's ULID); the SDK owns that key. Your message object is not changed.
+- `ticket_status` is `ok`, `error` (Expo rejected the message) or `failed` (the request to Expo failed). Messages go out
+  in requests of 100; a failed request only fails its own deliveries.
+- Every ticket or receipt error dispatches `M0d1xd\ExpoNotification\Events\DeliveryFailed`.
+- `DeviceNotRegistered` deactivates the token. The device is reactivated when it registers again.
+- Sending is synchronous. For large audiences, call `PushNotifier::send()` from a queued job.
+
+### Receipts
+
+`expo-notification:check-receipts` fetches receipts for deliveries sent at least `receipts.delay` minutes ago and
+stores `receipt_status` (`ok` / `error`). Receipts Expo never returns are marked `expired` after
+`receipts.expire_after` hours. The package schedules the command every 15 minutes, which needs the
+[scheduler](https://laravel.com/docs/scheduling#running-the-scheduler) running.
+
+```php
+'receipts' => [
+    'delay' => 15,                 // minutes
+    'expire_after' => 24,          // hours
+    'schedule' => '*/15 * * * *',  // null to schedule it yourself
+],
+```
+
+> A receipt `ok` means Expo handed the message to FCM/APNs. It does not mark the delivery as delivered:
+> `delivered_at` is set when the device reports it.
+
 ### Test command
 
 ```bash
 php artisan expo-notification:send "ExponentPushToken[xxx]" --title="Hello" --body="World"
+# Through PushNotifier, to registered devices, recording deliveries:
+php artisan expo-notification:send "ExponentPushToken[xxx]" --track
 ```
 
 ## Database schema
