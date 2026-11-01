@@ -10,6 +10,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use M0d1xd\ExpoNotification\Filament\ExpoNotificationPlugin;
 use M0d1xd\ExpoNotification\Filament\Resources\PushTokens\Pages\ListPushTokens;
+use M0d1xd\ExpoNotification\Filament\Resources\PushTokens\Pages\OwnerAnalysis;
 use M0d1xd\ExpoNotification\Filament\Resources\PushTokens\Pages\ViewPushToken;
 use M0d1xd\ExpoNotification\Filament\Resources\PushTokens\RelationManagers\DeliveriesRelationManager;
 use M0d1xd\ExpoNotification\Filament\Resources\PushTokens\Schemas\PushTokenInfolist;
@@ -76,6 +77,7 @@ class PushTokenResource extends Resource
     {
         return [
             'index' => ListPushTokens::route('/'),
+            'owner' => OwnerAnalysis::route('/owners/{owner}'),
             'view' => ViewPushToken::route('/{record}'),
         ];
     }

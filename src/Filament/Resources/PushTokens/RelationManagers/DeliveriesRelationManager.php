@@ -8,6 +8,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use M0d1xd\ExpoNotification\Filament\Support\DeliveryTable;
+use M0d1xd\ExpoNotification\Filament\Support\DeliveryTableContext;
 
 class DeliveriesRelationManager extends RelationManager
 {
@@ -20,6 +21,6 @@ class DeliveriesRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
-        return DeliveryTable::configure($table, perDevice: false);
+        return DeliveryTable::configure($table, DeliveryTableContext::Device);
     }
 }

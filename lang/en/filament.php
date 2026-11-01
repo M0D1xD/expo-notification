@@ -64,9 +64,20 @@ return [
         ],
         'groups' => [
             'owner' => 'Owner',
+            'devices' => ':count device (:active active)|:count devices (:active active)',
+            'last_registered' => 'last registered :time',
+            'analysis' => 'Full analysis →',
         ],
+        'owner_action' => 'Owner analysis',
         'section' => 'Device',
         'deliveries' => 'Notifications',
+    ],
+
+    'owner_analysis' => [
+        'breadcrumb' => 'Analysis',
+        'devices' => 'Devices',
+        'deliveries' => 'Notifications to every device',
+        'deleted_notification' => 'Deleted notification',
     ],
 
     'deliveries' => [
