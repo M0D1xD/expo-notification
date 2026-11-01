@@ -62,6 +62,9 @@ return [
             'signed_in' => 'Signed-in user',
             'guest' => 'Guest',
         ],
+        'groups' => [
+            'owner' => 'Owner',
+        ],
         'section' => 'Device',
         'deliveries' => 'Notifications',
     ],

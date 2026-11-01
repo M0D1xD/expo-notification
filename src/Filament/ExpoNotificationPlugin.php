@@ -38,6 +38,8 @@ class ExpoNotificationPlugin implements Plugin
 
     private bool $sending = true;
 
+    private bool $groupDevicesByOwner = false;
+
     /** @var class-string|null */
     private ?string $ownerModel = null;
 
@@ -125,6 +127,14 @@ class ExpoNotificationPlugin implements Plugin
         return $this;
     }
 
+    /** Opens the Devices list grouped by owner; the "Group by" menu offers it either way. */
+    public function groupDevicesByOwner(bool $condition = true): static
+    {
+        $this->groupDevicesByOwner = $condition;
+
+        return $this;
+    }
+
     /**
      * The model listed under "Chosen users" when sending. Defaults to `owner.model` in the "foreign" owner mode.
      *
@@ -207,6 +217,11 @@ class ExpoNotificationPlugin implements Plugin
     public function isSendingEnabled(): bool
     {
         return $this->sending;
+    }
+
+    public function isGroupingDevicesByOwner(): bool
+    {
+        return $this->groupDevicesByOwner;
     }
 
     /** @return class-string|null */
