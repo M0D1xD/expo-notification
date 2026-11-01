@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.5](https://github.com/M0D1xD/expo-notification/compare/v0.1.4...v0.1.5) (2026-11-01)
+
+
+### Features
+
+* **filament:** group devices by owner ([46a0b97](https://github.com/M0D1xD/expo-notification/commit/46a0b97f1f51c5797f42a77c69b8d1c5b508cee6))
+* **filament:** group devices by owner ([de0f09b](https://github.com/M0D1xD/expo-notification/commit/de0f09b4af440a39cf1d5a0c4045d36f6981619f))
+
 ## [0.1.4](https://github.com/M0D1xD/expo-notification/compare/v0.1.3...v0.1.4) (2026-10-29)
 
 
