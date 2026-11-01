@@ -62,6 +62,7 @@ class PluginOptionsTest extends FilamentTestCase
             'test_a_resource_can_be_turned_off' => $plugin->devicesResource(enabled: false),
             'test_the_dashboard_widgets_can_be_turned_off' => $plugin->widgets([]),
             'test_sending_can_be_turned_off' => $plugin->sending(false),
+            'test_devices_can_be_grouped_by_owner_by_default' => $plugin->groupDevicesByOwner(),
             'test_chosen_users_needs_an_owner_model' => $plugin->ownerModel(null),
             default => $plugin,
         };
@@ -118,6 +119,12 @@ class PluginOptionsTest extends FilamentTestCase
 
         $this->assertNotContains(PushStatsOverview::class, Filament::getWidgets());
         $this->assertNotContains(PushActivityChart::class, Filament::getWidgets());
+    }
+
+    public function test_devices_can_be_grouped_by_owner_by_default(): void
+    {
+        $this->assertTrue(ExpoNotificationPlugin::get()->isGroupingDevicesByOwner());
+        $this->assertSame('owner', Livewire::test(ListPushTokens::class)->instance()->getTableGrouping()?->getId());
     }
 
     public function test_sending_can_be_turned_off(): void

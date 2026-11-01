@@ -427,6 +427,7 @@ ExpoNotificationPlugin::make()
     ->navigationSort(10)                        // the second item follows the first
     ->notificationsResource(label: 'Sent', icon: Heroicon::OutlinedMegaphone)
     ->devicesResource(label: 'Phones', enabled: true)
+    ->groupDevicesByOwner()                     // open Devices grouped by owner (always in "Group by")
     ->widgets([PushStatsOverview::class])       // default both widgets; [] = none
     ->sending(false)                            // hide every Send action
     ->ownerModel(User::class, 'email')          // listed under "Chosen users", shown as the owner
@@ -435,7 +436,8 @@ ExpoNotificationPlugin::make()
 ```
 
 `ownerModel()` defaults to `owner.model` in the `foreign` owner mode. In `morph` mode, without it, the
-**Chosen users** target is hidden. The widgets (`M0d1xd\ExpoNotification\Filament\Widgets\*`) are ordinary Filament
+**Chosen users** target is hidden. The Devices list can be grouped by owner from its **Group by** menu, with
+guest devices in one "Guest" group; `groupDevicesByOwner()` makes that the default. The widgets (`M0d1xd\ExpoNotification\Filament\Widgets\*`) are ordinary Filament
 widgets, so you can also put them on any page yourself.
 
 The pages don't check permissions themselves. Restrict them with policies for
