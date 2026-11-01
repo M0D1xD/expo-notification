@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.6](https://github.com/M0D1xD/expo-notification/compare/v0.1.5...v0.1.6) (2026-11-01)
+
+
+### Features
+
+* **filament:** owner summary and analysis page ([6e71f73](https://github.com/M0D1xD/expo-notification/commit/6e71f7308974d729983c3cc558a9cd1013f422be))
+* **filament:** owner summary and analysis page ([330df07](https://github.com/M0D1xD/expo-notification/commit/330df076fb8e817a38c0130e4203704fed542814))
+
 ## [0.1.5](https://github.com/M0D1xD/expo-notification/compare/v0.1.4...v0.1.5) (2026-11-01)
 
 
