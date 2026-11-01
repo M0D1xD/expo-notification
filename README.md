@@ -437,7 +437,10 @@ ExpoNotificationPlugin::make()
 
 `ownerModel()` defaults to `owner.model` in the `foreign` owner mode. In `morph` mode, without it, the
 **Chosen users** target is hidden. The Devices list can be grouped by owner from its **Group by** menu, with
-guest devices in one "Guest" group; `groupDevicesByOwner()` makes that the default. The widgets (`M0d1xd\ExpoNotification\Filament\Widgets\*`) are ordinary Filament
+guest devices in one "Guest" group; `groupDevicesByOwner()` makes that the default. Each owner's group header sums
+up their devices (count, active, platforms, last registration) and links to **Full analysis**: a page with their
+devices, delivery stats, and every notification sent to each of their devices, showing whether it was received.
+A device's page links to the same analysis. The widgets (`M0d1xd\ExpoNotification\Filament\Widgets\*`) are ordinary Filament
 widgets, so you can also put them on any page yourself.
 
 The pages don't check permissions themselves. Restrict them with policies for

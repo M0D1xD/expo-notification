@@ -11,19 +11,31 @@ use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use M0d1xd\ExpoNotification\Filament\ExpoNotificationPlugin;
+use M0d1xd\ExpoNotification\Filament\Resources\PushNotifications\PushNotificationResource;
 use M0d1xd\ExpoNotification\Models\PushNotificationDelivery;
 
 /**
- * The deliveries table shared by a notification (one row per device) and a device (one row per notification).
+ * The deliveries table shared by a notification, a device and an owner; see {@see DeliveryTableContext}.
  */
 class DeliveryTable
 {
-    public static function configure(Table $table, bool $perDevice): Table
+    public static function configure(Table $table, DeliveryTableContext $context): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with($perDevice ? ['pushToken.owner'] : ['notification']))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(array_values(array_filter([
+                $context->showsOwner() ? 'pushToken.owner' : ($context->showsDevice() ? 'pushToken' : null),
+                $context->showsNotification() ? 'notification' : null,
+            ]))))
             ->columns([
-                ...($perDevice ? [
+                ...($context->showsNotification() ? [
+                    TextColumn::make('notification.title')
+                        ->label(__('expo-notification::filament.deliveries.notification'))
+                        ->limit(40)
+                        ->url(fn (PushNotificationDelivery $record): ?string => ExpoNotificationPlugin::get()->isEnabled('notifications')
+                            ? PushNotificationResource::getUrl('view', ['record' => $record->push_notification_id])
+                            : null),
+                ] : []),
+                ...($context->showsDevice() ? [
                     TextColumn::make('pushToken.device_id')
                         ->label(__('expo-notification::filament.deliveries.device'))
                         ->searchable()
@@ -31,14 +43,12 @@ class DeliveryTable
                     TextColumn::make('pushToken.platform')
                         ->label(__('expo-notification::filament.deliveries.platform'))
                         ->badge(),
+                ] : []),
+                ...($context->showsOwner() ? [
                     TextColumn::make('owner')
                         ->label(__('expo-notification::filament.deliveries.owner'))
                         ->state(fn (PushNotificationDelivery $record): string => Display::owner($record->pushToken?->owner)),
-                ] : [
-                    TextColumn::make('notification.title')
-                        ->label(__('expo-notification::filament.deliveries.notification'))
-                        ->limit(40),
-                ]),
+                ] : []),
                 TextColumn::make('locale')
                     ->label(__('expo-notification::filament.deliveries.locale'))
                     ->badge()
@@ -86,7 +96,7 @@ class DeliveryTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                ...($perDevice ? [
+                ...($context->showsDevice() ? [
                     SelectFilter::make('platform')
                         ->label(__('expo-notification::filament.deliveries.platform'))
                         ->options(__('expo-notification::filament.platforms'))
